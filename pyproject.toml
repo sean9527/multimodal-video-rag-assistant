@@ -36,6 +36,10 @@ ml = [
   "scenedetect[opencv]>=0.6.4",
   "opencv-python>=4.9",
 ]
+api = [   # optional cloud LLM providers (local Ollama needs none of these)
+  "openai>=1.0",
+  "anthropic>=0.40",
+]
 dev = [
   "pytest>=8.0",
   "ruff>=0.5",

@@ -24,7 +24,7 @@ Text-only RAG indexes text. **Video carries three signals: a spoken transcript, 
 - 🔎 **Cross-modal retrieval** — one question → BGE text search over the transcript **and** CLIP text→image search over keyframes.
 - 🥇 **Cross-encoder reranking** (bge-reranker-v2-m3) — measured to lift ranking quality (see [Evaluation](#evaluation)).
 - 🗂️ **Course / video scoping** — one shared vector store, isolated by `course_id` / `video_id` metadata (multi-tenancy, not a DB per course).
-- 💬 **Grounded answers with timestamp citations** via a local LLM (Ollama).
+- 💬 **Grounded answers with timestamp citations** via a **pluggable LLM** — local Ollama by default, swappable to OpenAI / Anthropic with one config line.
 - 🖥️ **Web UI** — a live, auto-scrolling transcript synced to playback; click any line or citation to seek; batch-ingest whole course folders.
 - 📊 **A real evaluation harness** — Recall@k / MRR, dense vs. reranked.
 
@@ -78,7 +78,7 @@ python scripts/evaluate.py        # Recall@k / MRR, dense vs. rerank
 | Visual / cross-modal | **OpenCLIP** ViT-B/32 |
 | Reranking | **bge-reranker-v2-m3** cross-encoder |
 | Vector store | **LanceDB** (embedded, 2 tables, metadata scoping) |
-| Generation | **Ollama** (local LLM, e.g. Qwen) |
+| Generation | **Pluggable** — Ollama (local, default) · OpenAI · Anthropic |
 | UI / config | Streamlit · pydantic-settings |
 
 ## Quickstart
@@ -139,6 +139,25 @@ for course in CS61A CS106B; do
     python scripts/ingest.py "$f" "$course" && python scripts/index.py "$f" "$course"
   done
 done
+```
+
+### Swap the LLM (local ↔ cloud)
+
+Generation is the only place the system touches an LLM, so it sits behind a small provider interface ([`src/mvrag/generation/llm.py`](src/mvrag/generation/llm.py)). The default is **local Ollama**; to use a cloud API, install the extra and set the provider + key in `.env` — nothing else in the pipeline changes:
+
+```bash
+pip install -e ".[api]"
+```
+```env
+# .env — use Claude…
+MVRAG_LLM_PROVIDER=anthropic
+MVRAG_ANTHROPIC_MODEL=claude-opus-4-8
+ANTHROPIC_API_KEY=sk-ant-...
+
+# …or OpenAI
+# MVRAG_LLM_PROVIDER=openai
+# MVRAG_OPENAI_MODEL=gpt-4o-mini
+# OPENAI_API_KEY=sk-...
 ```
 
 ## How a query flows

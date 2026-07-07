@@ -1,4 +1,4 @@
-"""Answer a question from retrieved context via a local LLM (Ollama).
+"""Answer a question from retrieved context, via a pluggable LLM (see llm.py).
 
 Grounding (to curb hallucination): the system prompt restricts the model to the
 provided excerpts, each labeled with its [timestamp]; when the scope spans
@@ -12,9 +12,8 @@ on video type" note.
 """
 from __future__ import annotations
 
-import ollama
-
 from mvrag.config import settings
+from mvrag.generation.llm import get_llm
 from mvrag.retrieval.retriever import retrieve
 from mvrag.schemas import RetrievalBundle, format_timestamp
 
@@ -42,24 +41,14 @@ def answer(query: str, course_id: str | None = None, video_id: str | None = None
     bundle = retrieve(query, course_id=course_id, video_id=video_id)
     user_msg = f"Transcript excerpts:\n{_format_context(bundle)}\n\nQuestion: {query}"
 
-    client = ollama.Client(host=settings.ollama_host)
     try:
-        resp = client.chat(
-            model=settings.ollama_model,
-            messages=[
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": user_msg},
-            ],
-            options={"temperature": 0.2},
-        )
+        text = get_llm().chat(SYSTEM_PROMPT, user_msg)
     except Exception as e:
         raise RuntimeError(
-            f"Ollama call failed ({e}). Is `ollama serve` running and is the model "
-            f"'{settings.ollama_model}' pulled?  Try:  ollama pull {settings.ollama_model}"
+            f"LLM call failed via provider '{settings.llm_provider}' ({e}). "
+            f"ollama → is `ollama serve` running and the model pulled? "
+            f"openai/anthropic → run `pip install -e '.[api]'` and set "
+            f"OPENAI_API_KEY / ANTHROPIC_API_KEY."
         ) from e
 
-    return {
-        "answer": resp["message"]["content"],
-        "chunks": bundle.chunks,
-        "frames": bundle.frames,
-    }
+    return {"answer": text, "chunks": bundle.chunks, "frames": bundle.frames}

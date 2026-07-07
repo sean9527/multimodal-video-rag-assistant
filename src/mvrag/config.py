@@ -9,10 +9,15 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from dotenv import load_dotenv
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 # repo root = two levels up from src/mvrag/config.py
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
+
+# Load .env early so cloud-API keys in it (OPENAI_API_KEY / ANTHROPIC_API_KEY)
+# reach the SDKs, and MVRAG_ vars resolve regardless of the current directory.
+load_dotenv(PROJECT_ROOT / ".env")
 
 
 class Settings(BaseSettings):
@@ -59,10 +64,17 @@ class Settings(BaseSettings):
     rerank_model: str = "BAAI/bge-reranker-v2-m3"   # multilingual cross-encoder
     rerank_top_n: int = 20                          # dense candidates to rerank
 
-    # --- Generation: Ollama (local LLM) ---
+    # --- Generation ---
+    llm_provider: str = "ollama"                # ollama (local) | openai | anthropic
+
+    # Ollama (local, default)
     ollama_host: str = "http://localhost:11434"
-    ollama_model: str = "qwen2.5:7b"          # Ollama's 7b tag is already instruct-tuned
+    ollama_model: str = "qwen2.5:7b"            # Ollama's 7b tag is already instruct-tuned
     ollama_vision_model: str = "qwen2.5vl:7b"   # optional keyframe verification
+
+    # Cloud APIs (optional; keys read from OPENAI_API_KEY / ANTHROPIC_API_KEY env vars)
+    openai_model: str = "gpt-4o-mini"
+    anthropic_model: str = "claude-opus-4-8"
 
     def ensure_dirs(self) -> None:
         """Create all storage dirs if missing (safe to call on startup)."""
