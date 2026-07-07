@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+
+# Env / secrets
+.env
+
+# Project data & artifacts (large / regenerable — never commit these)
+data/
+storage/
+*.mp4
+*.mkv
+*.mov
+*.webm
+*.wav
+
+# Model weights / caches
+*.pt
+*.bin
+.cache/
+
+# OS / editor / tooling
+.DS_Store
+.idea/
+.vscode/
+.claude/
